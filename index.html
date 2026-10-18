@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>LOTSE — A deterministic security-signal dashboard</title>
+<style>
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+  line-height: 1.45;
+  --bg: #F4F6F9;
+  --panel: #FFFFFF;
+  --text: #1B2434;
+  --muted: #5C6B80;
+  --border: #DCE3EC;
+  --ok: #0E7A4D;
+  --warn: #9A6B00;
+  --bad: #B3261E;
+  --accent: #3B5BDB;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 1rem;
+  background: var(--bg);
+  color: var(--text);
+}
+.page-header, footer { max-width: 1500px; margin: 0 auto 1rem; }
+h1 { font-size: clamp(1.5rem, 2vw, 2rem); margin: 0; line-height: 1.2; }
+h1 em, .brand em { font-style: italic; }
+.title-rest { font-weight: 400; color: var(--muted); }
+h2 { font-size: 1.05rem; margin: 0; }
+p { margin: .55rem 0; }
+.subtitle { color: var(--muted); font-size: .82rem; }
+.privacy { color: var(--muted); font-size: .85rem; }
+.hero { max-width: 72ch; color: var(--text); font-size: .95rem; }
+.hero em { font-style: italic; }
+.dashboard {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: flex;
+  gap: .85rem;
+  align-items: flex-start;
+}
+.dashboard-column {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
+}
+.card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: .65rem;
+  padding: .9rem;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+}
+.card-header { display: flex; justify-content: space-between; align-items: start; gap: .7rem; }
+.status-chip {
+  display: inline-block;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: .15rem .5rem;
+  font-size: .72rem;
+  white-space: nowrap;
+}
+.status-ok-new .status-chip { color: var(--ok); }
+.status-ok-unchanged .status-chip { color: var(--muted); }
+.status-stale { opacity: .72; }
+.status-failed .status-chip { color: var(--bad); }
+.status-disabled .status-chip { color: var(--muted); }
+.as-of, .rules, .source, .note { font-size: .84rem; }
+.headline-number { font-size: 2rem; font-weight: 700; margin-bottom: 0; }
+.metric-caption { font-size: .78rem; color: var(--muted); }
+.metrics { margin: .6rem 0; }
+.metrics div { display: flex; justify-content: space-between; gap: .7rem; border-bottom: 1px solid var(--border); padding: .2rem 0; }
+.metrics dt { color: var(--muted); }
+.metrics dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.health-list { list-style: none; padding: 0; margin: .5rem 0; }
+.health-list li { padding: .45rem 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: .2rem .5rem; }
+.health-list small { grid-column: 1 / -1; color: var(--muted); }
+.spark { width: 100%; height: 46px; display: block; margin: .4rem 0 .2rem; }
+.spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spark .last { fill: var(--accent); }
+.error { color: var(--bad); font-size: .8rem; }
+a { color: var(--accent); text-decoration-thickness: .08em; text-underline-offset: .18em; }
+footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; margin-top: 1.2rem; padding: .8rem 0; border-top: 1px solid var(--border); }
+.footer-brand, .footer-meta, .footer-links { display: flex; flex-wrap: wrap; gap: .35rem 1rem; align-items: baseline; }
+.footer-meta { color: var(--muted); font-size: .8rem; }
+.footer-meta strong { color: var(--text); font-weight: 600; }
+.footer-links { font-size: .82rem; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0D1420;
+    --panel: #161F2E;
+    --text: #E4EAF3;
+    --muted: #8B99AE;
+    --border: #2B3A50;
+    --ok: #3DD68C;
+    --warn: #F5B53F;
+    --bad: #FF6B6B;
+    --accent: #7C9CFF;
+  }
+}
+
+</style>
+</head>
+<body>
+<header class="page-header">
+  <h1><em>LOTSE</em><span class="title-rest"> — A deterministic security-signal dashboard</span></h1>
+  <p class="hero"><em>LOTSE</em> aggregates vulnerability and threat intelligence — CISA KEV, EPSS, Exploit-DB, CERT-Bund — into a single, reproducible dashboard. Every module is a fetch-and-score step running on a plain Linux cron: no AI, no trackers, no ambiguity. What you see is what the rules evaluated, byte-for-byte the same on every machine.</p>
+</header>
+<main class="dashboard" id="dashboard"></main>
+<noscript><p class="privacy">JavaScript is required to render the dashboard cards.</p></noscript>
+<footer>
+  <div class="footer-brand">
+    <span class="brand"><em>LOTSE</em></span>
+    <span>Local evaluation · Aggregated signals · No analytics trackers</span>
+  </div>
+  <div class="footer-meta">
+    <span>Started <strong>2026-10-18</strong></span>
+    <span>Last run <strong>2026-10-18</strong></span>
+    <span>Runs <strong>1</strong></span>
+    <span>Data as of <strong>2026-10-18</strong></span>
+    <span>v0.1.0</span>
+  </div>
+</footer>
+<script type="application/json" id="lotse-data">{"cards": [{"as_of": "2026-10-16", "column": 1, "every": "1d", "metrics": {"added_1d": 2, "added_30d": 35, "added_7d": 9, "added_90d": 101, "known_ransomware": 361, "last_addition": "2026-10-16", "total": 1748}, "module": "cisa_kev", "order": 1, "planned_source": "CISA KEV JSON feed", "rules_evaluated": ["KEV-T01", "KEV-T02", "KEV-T03", "KEV-T04", "KEV-S01"], "series": [1748], "source_url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", "status": "ok-new", "title": "CISA KEV"}, {"as_of": "2026-10-01", "column": 1, "every": "1d", "metrics": {"added_1d": 9, "added_30d": 20, "added_7d": 10, "added_90d": 81, "total": 47170, "verified": 33978, "with_cve": 27448}, "module": "exploitdb", "order": 2, "planned_source": "Exploit-DB repository CSV", "rules_evaluated": ["EDB-T01", "EDB-T02", "EDB-T03", "EDB-S01"], "series": [47170], "source_url": "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv", "status": "ok-new", "title": "Exploit-DB"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"critical_ge_0_9": 805, "high_ge_0_7": 2458, "mean_score": 0.02661, "median_score": 0.00647, "model_version": "v2026.06.15", "scored": 390807}, "module": "epss", "order": 1, "planned_source": "FIRST EPSS daily scores", "rules_evaluated": ["EPSS-T01", "EPSS-T02", "EPSS-S01"], "series": [2458], "source_url": "https://epss.cyentia.com/epss_scores-current.csv.gz", "status": "ok-new", "title": "EPSS"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"disabled": 4, "failed": 0, "modules": [{"as_of": "2026-10-16", "enabled": true, "every": "1d", "module": "cisa_kev", "status": "ok-new", "title": "CISA KEV"}, {"as_of": "2026-10-18", "enabled": true, "every": "1d", "module": "epss", "status": "ok-new", "title": "EPSS"}, {"as_of": "2026-10-01", "enabled": true, "every": "1d", "module": "exploitdb", "status": "ok-new", "title": "Exploit-DB"}, {"as_of": "", "enabled": false, "every": "1d", "module": "ai_stack_cve", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "enabled": false, "every": "1d", "module": "certbund", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "enabled": false, "every": "7d", "module": "eurlex", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "enabled": false, "every": "7d", "module": "dip", "status": "disabled", "title": "Bundestag DIP"}], "ok": 3, "stale": 0, "unchanged": 0}, "module": "build_health", "order": 2, "planned_source": "Local result files", "rules_evaluated": ["HEALTH-S01"], "series": [3], "source_url": "", "status": "ok-new", "title": "Build Health"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "certbund", "order": 1, "planned_source": "CERT-Bund warnings", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "eurlex", "order": 2, "planned_source": "EUR-Lex", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "ai_stack_cve", "order": 3, "planned_source": "AI stack CVE sources", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "dip", "order": 4, "planned_source": "Bundestag DIP", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "Bundestag DIP"}], "contact": "", "legal_url": "", "meta": {"data_as_of": "2026-10-18", "last_run": "2026-10-18", "runs": 1, "started": "2026-10-18", "version": "0.1.0"}, "noindex": true}</script>
+<script>
+(function () {
+  "use strict";
+
+  var payload = JSON.parse(document.getElementById("lotse-data").textContent);
+  var host = document.getElementById("dashboard");
+
+  function node(tag, className, text) {
+    var element = document.createElement(tag);
+    if (className) { element.className = className; }
+    if (text !== undefined) { element.textContent = text; }
+    return element;
+  }
+
+  var statusLabels = {
+    "ok-new": "new",
+    "ok-unchanged": "unchanged",
+    "stale": "stale",
+    "failed": "failed",
+    "disabled": "disabled"
+  };
+
+  var captions = {
+    "stale": "Source did not advance.",
+    "failed": "Evaluation failed.",
+    "disabled": "not active"
+  };
+
+  var metricLabels = {
+    total: "Total",
+    known_ransomware: "Known ransomware",
+    last_addition: "Last addition",
+    added_1d: "Added (1 day)",
+    added_7d: "Added (7 days)",
+    added_30d: "Added (30 days)",
+    added_90d: "Added (90 days)",
+    scored: "Scored CVEs",
+    high_ge_0_7: "EPSS ≥ 0.7",
+    critical_ge_0_9: "EPSS ≥ 0.9",
+    median_score: "Median score",
+    mean_score: "Mean score",
+    model_version: "Model version",
+    verified: "Verified",
+    with_cve: "With CVE mapping",
+    ok: "Ok",
+    unchanged: "Unchanged",
+    stale: "Stale",
+    failed: "Failed",
+    disabled: "Disabled"
+  };
+
+  function label(key) {
+    return metricLabels[key] || key.replace(/_/g, " ");
+  }
+
+  function formatNumber(value) {
+    var parts = String(value).split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+
+  function formatValue(value) {
+    if (Array.isArray(value)) { return value.map(formatValue).join(", "); }
+    if (value && typeof value === "object") { return JSON.stringify(value); }
+    if (typeof value === "number" && isFinite(value)) { return formatNumber(value); }
+    return String(value);
+  }
+
+  function daysBetween(asOf, last) {
+    if (!asOf || !last) { return null; }
+    var end = Date.parse(asOf + "T00:00:00Z");
+    var start = Date.parse(last + "T00:00:00Z");
+    if (isNaN(end) || isNaN(start)) { return null; }
+    return Math.round((end - start) / 86400000);
+  }
+
+  function spark(series) {
+    var width = 300;
+    var height = 46;
+    var pad = 3;
+    var svgNs = "http://www.w3.org/2000/svg";
+    var values = (series && series.length) ? series.slice() : [0];
+    if (values.length === 1) { values.push(values[0]); }
+    var min = Math.min.apply(null, values);
+    var max = Math.max.apply(null, values);
+    var span = (max - min) || 1;
+    var svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("class", "spark");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+    svg.setAttribute("preserveAspectRatio", "none");
+    var points = values.map(function (value, index) {
+      var x = pad + (values.length === 1
+        ? (width - 2 * pad) / 2
+        : index * (width - 2 * pad) / (values.length - 1));
+      var y = height - pad - ((value - min) / span) * (height - 2 * pad);
+      return [x, y];
+    });
+    var line = document.createElementNS(svgNs, "polyline");
+    line.setAttribute("points", points.map(function (point) {
+      return point[0].toFixed(2) + "," + point[1].toFixed(2);
+    }).join(" "));
+    line.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(line);
+    var last = document.createElementNS(svgNs, "circle");
+    last.setAttribute("class", "last");
+    last.setAttribute("cx", points[points.length - 1][0].toFixed(2));
+    last.setAttribute("cy", points[points.length - 1][1].toFixed(2));
+    last.setAttribute("r", "3");
+    svg.appendChild(last);
+    return svg;
+  }
+
+  function metricTable(metrics) {
+    var list = node("dl", "metrics");
+    Object.keys(metrics).sort().forEach(function (key) {
+      var row = node("div");
+      row.appendChild(node("dt", null, label(key)));
+      row.appendChild(node("dd", null, formatValue(metrics[key])));
+      list.appendChild(row);
+    });
+    return list;
+  }
+
+  function healthList(rows) {
+    var list = node("ul", "health-list");
+    rows.forEach(function (row) {
+      var item = node("li");
+      item.appendChild(node("strong", null, row.title || row.module || ""));
+      item.appendChild(node("span", null, statusLabels[row.status] || row.status || ""));
+      item.appendChild(node("small", null,
+        (row.as_of || "—") + " · " + (row.every || "") +
+        (row.enabled ? "" : " · not active")));
+      list.appendChild(item);
+    });
+    return list;
+  }
+
+  function card(data) {
+    var article = node("article", "card status-" + data.status);
+
+    var header = node("header", "card-header");
+    var heading = node("div");
+    heading.appendChild(node("h2", null, data.title));
+    header.appendChild(heading);
+    header.appendChild(node("span", "status-chip",
+      statusLabels[data.status] || data.status));
+    article.appendChild(header);
+
+    if (data.status !== "disabled") {
+      var asOf = node("p", "as-of", "As of: ");
+      asOf.appendChild(node("strong", null, data.as_of || "—"));
+      article.appendChild(asOf);
+    }
+
+    var metrics = data.metrics || {};
+    if (Object.prototype.hasOwnProperty.call(metrics, "last_addition")) {
+      var days = daysBetween(data.as_of, metrics.last_addition);
+      article.appendChild(node("p", "headline-number",
+        days === null ? "—" : String(days)));
+      article.appendChild(node("p", "metric-caption", "Days since last addition"));
+    }
+    if (data.series && data.series.length) {
+      article.appendChild(spark(data.series));
+    }
+    if (Array.isArray(metrics.modules)) {
+      article.appendChild(healthList(metrics.modules));
+      var summary = {};
+      Object.keys(metrics).forEach(function (key) {
+        if (key !== "modules") { summary[key] = metrics[key]; }
+      });
+      if (Object.keys(summary).length) {
+        article.appendChild(metricTable(summary));
+      }
+    } else if (Object.keys(metrics).length) {
+      article.appendChild(metricTable(metrics));
+    }
+
+    if (data.status === "disabled") {
+      article.appendChild(node("p", null,
+        data.planned_source + " · " + data.every));
+    }
+    if (captions[data.status]) {
+      article.appendChild(node("p", "note", captions[data.status]));
+    }
+    if (data.status !== "disabled") {
+      article.appendChild(node("p", "rules",
+        "Rules evaluated: " + ((data.rules_evaluated && data.rules_evaluated.length)
+          ? data.rules_evaluated.join(", ")
+          : "—")));
+    }
+
+    var source = node("p", "source", "Source: ");
+    if (data.source_url) {
+      var link = node("a", null, data.planned_source || data.source_url);
+      link.setAttribute("href", data.source_url);
+      link.setAttribute("rel", "noopener noreferrer");
+      source.appendChild(link);
+    } else {
+      source.appendChild(node("span", null, data.planned_source || "—"));
+    }
+    article.appendChild(source);
+    return article;
+  }
+
+  function render() {
+    host.textContent = "";
+    var width = (typeof window !== "undefined" && window.innerWidth)
+      ? window.innerWidth
+      : 1200;
+    var count = width >= 1100 ? 3 : width >= 700 ? 2 : 1;
+    var columns = [];
+    var index;
+    for (index = 0; index < count; index += 1) {
+      var column = node("div", "dashboard-column");
+      host.appendChild(column);
+      columns.push(column);
+    }
+    payload.cards.forEach(function (item, itemIndex) {
+      var target;
+      if (count === 3) {
+        target = Math.min(Math.max(item.column || 1, 1), 3) - 1;
+      } else if (count === 2) {
+        target = itemIndex % 2;
+      } else {
+        target = 0;
+      }
+      columns[target].appendChild(card(item));
+    });
+  }
+
+  render();
+  if (typeof window !== "undefined" && window.addEventListener) {
+    var resizeTimer = null;
+    window.addEventListener("resize", function () {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(render, 150);
+    });
+  }
+}());
+
+</script>
+</body>
+</html>
