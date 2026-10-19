@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<meta name="description" content="Deterministic security-signal dashboard aggregating CISA KEV, EPSS and Exploit-DB — no AI, no trackers, reproducible daily runs.">
+<meta name="theme-color" content="#F4F6F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D1420" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='3' fill='%233B5BDB'/><text x='8' y='12' font-size='11' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>L</text></svg>">
+<link rel="canonical" href="https://cyberhiten.github.io/lotse-public/">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
 <title>LOTSE — A deterministic security-signal dashboard</title>
 <style>
 :root {
@@ -130,7 +135,7 @@ footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; 
     <span>v0.1.0</span>
   </div>
 </footer>
-<script type="application/json" id="lotse-data">{"cards": [{"as_of": "2026-10-16", "column": 1, "every": "1d", "metrics": {"added_1d": 2, "added_30d": 35, "added_7d": 9, "added_90d": 101, "known_ransomware": 361, "last_addition": "2026-10-16", "total": 1748}, "module": "cisa_kev", "order": 1, "planned_source": "CISA KEV JSON feed", "rules_evaluated": ["KEV-T01", "KEV-T02", "KEV-T03", "KEV-T04", "KEV-S01"], "series": [1748], "source_url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", "status": "stale", "title": "CISA KEV"}, {"as_of": "2026-10-01", "column": 1, "every": "1d", "metrics": {"added_1d": 9, "added_30d": 20, "added_7d": 10, "added_90d": 81, "total": 47170, "verified": 33978, "with_cve": 27448}, "module": "exploitdb", "order": 2, "planned_source": "Exploit-DB repository CSV", "rules_evaluated": ["EDB-T01", "EDB-T02", "EDB-T03", "EDB-S01"], "series": [47170], "source_url": "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv", "status": "stale", "title": "Exploit-DB"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"critical_ge_0_9": 805, "high_ge_0_7": 2458, "mean_score": 0.02661, "median_score": 0.00647, "model_version": "v2026.06.15", "scored": 390807}, "module": "epss", "order": 1, "planned_source": "FIRST EPSS daily scores", "rules_evaluated": ["EPSS-T01", "EPSS-T02", "EPSS-S01"], "series": [2458], "source_url": "https://epss.cyentia.com/epss_scores-current.csv.gz", "status": "stale", "title": "EPSS"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"disabled": 4, "failed": 0, "modules": [{"as_of": "2026-10-16", "enabled": true, "every": "1d", "module": "cisa_kev", "status": "stale", "title": "CISA KEV"}, {"as_of": "2026-10-18", "enabled": true, "every": "1d", "module": "epss", "status": "stale", "title": "EPSS"}, {"as_of": "2026-10-01", "enabled": true, "every": "1d", "module": "exploitdb", "status": "stale", "title": "Exploit-DB"}, {"as_of": "", "enabled": false, "every": "1d", "module": "ai_stack_cve", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "enabled": false, "every": "1d", "module": "certbund", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "enabled": false, "every": "7d", "module": "eurlex", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "enabled": false, "every": "7d", "module": "dip", "status": "disabled", "title": "Bundestag DIP"}], "ok": 0, "stale": 3, "unchanged": 0}, "module": "build_health", "order": 2, "planned_source": "Local result files", "rules_evaluated": ["HEALTH-S01"], "series": [3], "source_url": "", "status": "stale", "title": "Build Health"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "certbund", "order": 1, "planned_source": "CERT-Bund warnings", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "eurlex", "order": 2, "planned_source": "EUR-Lex", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "ai_stack_cve", "order": 3, "planned_source": "AI stack CVE sources", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "dip", "order": 4, "planned_source": "Bundestag DIP", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "Bundestag DIP"}], "contact": "", "legal_url": "", "meta": {"data_as_of": "2026-10-18", "last_run": "2026-10-19", "runs": 2, "started": "2026-10-18", "version": "0.1.0"}, "noindex": true}</script>
+<script type="application/json" id="lotse-data">{"cards": [{"as_of": "2026-10-16", "column": 1, "every": "1d", "metrics": {"added_1d": 2, "added_30d": 35, "added_7d": 9, "added_90d": 101, "known_ransomware": 361, "last_addition": "2026-10-16", "total": 1748}, "module": "cisa_kev", "order": 1, "planned_source": "CISA KEV JSON feed", "rules_evaluated": ["KEV-T01", "KEV-T02", "KEV-T03", "KEV-T04", "KEV-S01"], "series": [1748], "source_url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", "status": "stale", "title": "CISA KEV"}, {"as_of": "2026-10-01", "column": 1, "every": "1d", "metrics": {"added_1d": 9, "added_30d": 20, "added_7d": 10, "added_90d": 81, "total": 47170, "verified": 33978, "with_cve": 27448}, "module": "exploitdb", "order": 2, "planned_source": "Exploit-DB repository CSV", "rules_evaluated": ["EDB-T01", "EDB-T02", "EDB-T03", "EDB-S01"], "series": [47170], "source_url": "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv", "status": "stale", "title": "Exploit-DB"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"critical_ge_0_9": 805, "high_ge_0_7": 2458, "mean_score": 0.02661, "median_score": 0.00647, "model_version": "v2026.06.15", "scored": 390807}, "module": "epss", "order": 1, "planned_source": "FIRST EPSS daily scores", "rules_evaluated": ["EPSS-T01", "EPSS-T02", "EPSS-S01"], "series": [2458], "source_url": "https://epss.cyentia.com/epss_scores-current.csv.gz", "status": "stale", "title": "EPSS"}, {"as_of": "2026-10-18", "column": 2, "every": "1d", "metrics": {"disabled": 4, "failed": 0, "modules": [{"as_of": "2026-10-16", "enabled": true, "every": "1d", "module": "cisa_kev", "status": "stale", "title": "CISA KEV"}, {"as_of": "2026-10-18", "enabled": true, "every": "1d", "module": "epss", "status": "stale", "title": "EPSS"}, {"as_of": "2026-10-01", "enabled": true, "every": "1d", "module": "exploitdb", "status": "stale", "title": "Exploit-DB"}, {"as_of": "", "enabled": false, "every": "1d", "module": "ai_stack_cve", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "enabled": false, "every": "1d", "module": "certbund", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "enabled": false, "every": "7d", "module": "eurlex", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "enabled": false, "every": "7d", "module": "dip", "status": "disabled", "title": "Bundestag DIP"}], "ok": 0, "stale": 3, "unchanged": 0}, "module": "build_health", "order": 2, "planned_source": "Local result files", "rules_evaluated": ["HEALTH-S01"], "series": [3], "source_url": "", "status": "stale", "title": "Build Health"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "certbund", "order": 1, "planned_source": "CERT-Bund warnings", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "CERT-Bund"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "eurlex", "order": 2, "planned_source": "EUR-Lex", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "EUR-Lex"}, {"as_of": "", "column": 3, "every": "1d", "metrics": {}, "module": "ai_stack_cve", "order": 3, "planned_source": "AI stack CVE sources", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "AI Stack CVE"}, {"as_of": "", "column": 3, "every": "7d", "metrics": {}, "module": "dip", "order": 4, "planned_source": "Bundestag DIP", "rules_evaluated": [], "series": [], "source_url": "", "status": "disabled", "title": "Bundestag DIP"}], "contact": "", "legal_url": "", "meta": {"data_as_of": "2026-10-18", "last_run": "2026-10-19", "runs": 2, "started": "2026-10-18", "version": "0.1.0"}, "noindex": false}</script>
 <script>
 (function () {
   "use strict";
@@ -212,7 +217,7 @@ footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; 
     var height = 46;
     var pad = 3;
     var svgNs = "http://www.w3.org/2000/svg";
-    var values = (series && series.length) ? series.slice() : [0];
+    var values = (series && series.length) ? series.slice(-90) : [0];
     if (values.length === 1) { values.push(values[0]); }
     var min = Math.min.apply(null, values);
     var max = Math.max.apply(null, values);
@@ -221,6 +226,9 @@ footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; 
     svg.setAttribute("class", "spark");
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
     svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", "Sparkline of the last " + values.length +
+      " values, latest " + values[values.length - 1]);
     var points = values.map(function (value, index) {
       var x = pad + (values.length === 1
         ? (width - 2 * pad) / 2
@@ -313,7 +321,11 @@ footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; 
         data.planned_source + " · " + data.every));
     }
     if (captions[data.status]) {
-      article.appendChild(node("p", "note", captions[data.status]));
+      var noteText = captions[data.status];
+      if (data.status === "stale" && payload.meta && payload.meta.data_as_of) {
+        noteText += " Checked " + payload.meta.data_as_of + ".";
+      }
+      article.appendChild(node("p", "note", noteText));
     }
     if (data.status !== "disabled") {
       article.appendChild(node("p", "rules",
@@ -362,11 +374,15 @@ footer { display: flex; flex-direction: column; gap: .35rem; font-size: .85rem; 
   }
 
   render();
-  if (typeof window !== "undefined" && window.addEventListener) {
-    var resizeTimer = null;
-    window.addEventListener("resize", function () {
-      window.clearTimeout(resizeTimer);
-      resizeTimer = window.setTimeout(render, 150);
+  if (typeof window !== "undefined" && window.matchMedia) {
+    var queries = [
+      window.matchMedia("(min-width: 1100px)"),
+      window.matchMedia("(min-width: 700px)")
+    ];
+    var onBreakpoint = function () { render(); };
+    queries.forEach(function (mq) {
+      if (mq.addEventListener) { mq.addEventListener("change", onBreakpoint); }
+      else if (mq.addListener) { mq.addListener(onBreakpoint); }
     });
   }
 }());
