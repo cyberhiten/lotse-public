@@ -1,0 +1,1353 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Deterministic security-signal dashboard aggregating CISA KEV, EPSS, Exploit-DB, URLhaus, OSV.dev, NOAA space weather, cloud provider status and the SANS ISC Infocon — no AI, no trackers, reproducible daily runs.">
+<meta name="theme-color" content="#F5F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='%230071E3'/><text x='8' y='12' font-size='11' text-anchor='middle' fill='white' font-family='sans-serif' font-weight='bold'>L</text></svg>">
+<link rel="canonical" href="https://cyberhiten.github.io/lotse-public/">
+<meta name="robots" content="noindex, nofollow"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>LOTSE — A deterministic security-signal dashboard</title>
+<style>
+/* LOTSE v3 — a quiet, reference-like security dashboard.
+   Apple-calibre type and spacing; Purdue OWL-style structure: a clear
+   masthead, an "On this page" index, section labels and a Reference block.
+   Three colour themes (classic, warm, dark) share this stylesheet. */
+
+:root {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Helvetica Neue", "Segoe UI", Roboto, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  --bg: #F5F5F7;
+  --panel: #FFFFFF;
+  --text: #1D1D1F;
+  --muted: #6E6E73;
+  --border: #D2D2D7;
+  --ok: #1D7A46;
+  --warn: #B25000;
+  --bad: #C4271E;
+  --accent: #0071E3;
+  --info: #0A7A8A;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 4%), 0 10px 30px rgb(0 0 0 / 4%);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: clamp(1rem, 3vw, 2.5rem);
+  background: var(--bg);
+  color: var(--text);
+}
+.page-header, .on-this-page, .legend, .hero-panel, .grid, .signal-strip,
+.tech-details, footer {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.page-header { margin-bottom: .9rem; }
+h1 { font-size: clamp(2rem, 4vw, 2.75rem); margin: 0; line-height: 1.05; letter-spacing: -.03em; }
+h1 em, .brand em { font-style: italic; }
+.title-rest { font-weight: 400; color: var(--muted); }
+h2 { font-size: 1.05rem; margin: 0; letter-spacing: -.01em; }
+p { margin: .5rem 0; }
+.hero { max-width: 72ch; color: var(--muted); font-size: 1rem; }
+.hero em { font-style: italic; }
+.privacy { color: var(--muted); font-size: .85rem; }
+
+/* ---- Masthead (Purdue OWL-style reference header) ---- */
+.brand-row { display: flex; align-items: center; gap: .85rem; }
+.brand-mark {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: var(--accent); color: #fff;
+  font-weight: 700; font-size: 1.35rem; letter-spacing: -.03em;
+}
+.eyebrow {
+  margin: 0 0 .1rem; font-size: .68rem; font-weight: 650;
+  text-transform: uppercase; letter-spacing: .12em; color: var(--muted);
+}
+.page-meta {
+  display: flex; flex-wrap: wrap; gap: .35rem 1.4rem;
+  margin-top: .7rem; font-size: .78rem; color: var(--muted);
+}
+.page-meta strong { color: var(--text); font-weight: 600; }
+.on-this-page {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .35rem 1.25rem;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: .6rem 0; margin-bottom: 1rem; font-size: .8rem;
+}
+.otp-label {
+  font-size: .64rem; font-weight: 650; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted);
+}
+.on-this-page a { color: var(--accent); text-decoration: none; }
+.on-this-page a:hover { text-decoration: underline; text-underline-offset: .18em; }
+.section-label {
+  max-width: 1280px; margin: 0 auto .5rem;
+  font-size: .68rem; font-weight: 650; text-transform: uppercase;
+  letter-spacing: .1em; color: var(--muted);
+}
+html { scroll-behavior: smooth; }
+[id] { scroll-margin-top: 1rem; }
+
+/* ---- Legend strip ---- */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .35rem 1.2rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0 0 .7rem;
+  font-size: .76rem;
+  color: var(--muted);
+  margin-bottom: 1.1rem;
+}
+.lg-item { display: inline-flex; align-items: center; gap: .4rem; }
+.dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  flex: 0 0 auto;
+}
+.dot.act { background: var(--bad); }
+.dot.watch { background: var(--warn); }
+.dot.bgtier { background: var(--muted); }
+.dot.ok { background: var(--ok); }
+.dot.bad { background: var(--bad); }
+.dot.unscored { background: var(--muted); }
+.dot.unknown { background: var(--muted); }
+.lg-sep { width: 1px; height: 16px; background: var(--border); }
+.lg-title { font-weight: 650; color: var(--text); font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ---- Hero panel: KEV + EPSS "act on today" ---- */
+.hero-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.3rem;
+  margin-bottom: 1.1rem;
+  box-shadow: var(--shadow);
+}
+.hero-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: .2rem; }
+.hero-stats { display: flex; gap: 1.6rem; flex-wrap: wrap; }
+.hstat { text-align: right; }
+.hstat b { font-size: 1.6rem; font-weight: 700; display: block; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.hstat span { font-size: .72rem; color: var(--muted); }
+.tablewrap { overflow-x: auto; margin: .4rem 0 .2rem; }
+table.sig { width: 100%; border-collapse: collapse; font-size: .84rem; }
+table.sig th {
+  text-align: left; font-weight: 600; color: var(--muted);
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .04em;
+  padding: .35rem .5rem; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+table.sig td { padding: .5rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+table.sig tr:last-child td { border-bottom: none; }
+.cve { font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prod { color: var(--text); }
+.tier { white-space: nowrap; font-size: .78rem; }
+.epss-cell { display: flex; align-items: center; gap: .5rem; min-width: 150px; }
+.bar { flex: 0 0 90px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.bar span { display: block; height: 100%; border-radius: 3px; }
+.bar .act { background: var(--bad); }
+.bar .watch { background: var(--warn); }
+.bar .bgtier { background: var(--muted); }
+.epss-num { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+.chip {
+  display: inline-block; border: 1px solid currentColor; border-radius: 999px;
+  padding: .05rem .45rem; font-size: .68rem; white-space: nowrap;
+}
+.chip.ransom { color: var(--bad); }
+.chip.status-ok { color: var(--ok); }
+.added-cell { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* ---- Card grid: CSS-driven, 3/2/1 columns ---- */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.1rem; align-items: start; }
+.card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+.card-header { display: flex; justify-content: space-between; align-items: start; gap: .7rem; }
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: 0;
+  padding: 0;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.status-chip::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+.status-ok-new .status-chip { color: var(--ok); }
+.status-ok-unchanged .status-chip { color: var(--muted); }
+.status-stale { opacity: .72; }
+.status-failed .status-chip { color: var(--bad); }
+.status-disabled { display: none; } /* approved: disabled cards leave the page */
+.as-of, .rules, .source, .note { font-size: .82rem; }
+.as-of { color: var(--muted); }
+.as-of strong { color: var(--text); font-weight: 600; }
+.headline-number { font-size: 2.5rem; font-weight: 700; margin: .45rem 0 0; letter-spacing: -.04em; line-height: 1; }
+.headline-number.info { color: var(--info); }
+.metric-caption { font-size: .8rem; color: var(--muted); margin-top: .15rem; }
+.metrics { margin: .75rem 0; }
+.metrics div { display: flex; justify-content: space-between; gap: .7rem; border-bottom: 1px solid var(--border); padding: .32rem 0; }
+.metrics dt { color: var(--muted); font-size: .84rem; }
+.metrics dd { margin: 0; font-weight: 600; font-size: .84rem; font-variant-numeric: tabular-nums; }
+
+/* ---- Named "what's new" rows ---- */
+.mini-rows { list-style: none; padding: 0; margin: .5rem 0; }
+.mini-rows li { padding: .45rem 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: .6rem; align-items: baseline; }
+.mini-rows .k { font-weight: 600; font-size: .84rem; white-space: nowrap; }
+.mini-rows .v { color: var(--muted); font-size: .8rem; text-align: right; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .76rem; }
+
+/* ---- Sparkline ---- */
+.spark { width: 100%; height: 40px; display: block; margin: .5rem 0 .3rem; }
+.spark polyline { fill: none; stroke: var(--accent); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.spark .last { fill: var(--accent); }
+.spark.swx polyline { stroke: var(--info); }
+.spark.swx .last { fill: var(--info); }
+
+/* ---- Health list (build_health card, unchanged behaviour) ---- */
+.health-list { list-style: none; padding: 0; margin: .5rem 0; }
+.health-list li { padding: .45rem 0; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: .2rem .5rem; }
+.health-list small { grid-column: 1 / -1; color: var(--muted); }
+
+/* ---- Muted audit lines ---- */
+.audit {
+  font-size: .66rem;
+  color: var(--muted);
+  opacity: .8;
+  margin: .55rem 0 0;
+  border-top: 1px dashed var(--border);
+  padding-top: .35rem;
+}
+.error { color: var(--bad); font-size: .8rem; }
+a { color: var(--accent); text-decoration-thickness: .08em; text-underline-offset: .18em; }
+
+/* ---- Compact signal strip (cloud / threat levels) ---- */
+.signal-strip {
+  max-width: 1280px;
+  margin: 1.1rem auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+.strip-row {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .7rem 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem 1.1rem;
+  font-size: .8rem;
+}
+.strip-title {
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .64rem;
+  color: var(--muted);
+  min-width: 5rem;
+}
+.strip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .22rem .6rem;
+  border-radius: 999px;
+  background: var(--bg);
+}
+.strip-label { font-weight: 600; }
+.strip-note { color: var(--muted); font-size: .76rem; }
+.strip-empty { color: var(--muted); }
+
+footer { margin-top: 2rem; border-top: 1px solid var(--border); padding: 1.2rem 0 2rem; display: flex; flex-direction: column; gap: .5rem; }
+.audit-strip { font-size: .7rem; color: var(--muted); line-height: 1.6; margin: 0; }
+.audit-strip b { color: var(--text); font-weight: 600; font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; }
+.footer-brand, .footer-meta, .footer-links { display: flex; flex-wrap: wrap; gap: .35rem 1rem; align-items: baseline; }
+.footer-meta { color: var(--muted); font-size: .8rem; }
+.footer-meta strong { color: var(--text); font-weight: 600; }
+.footer-links { font-size: .82rem; }
+
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px)  { .grid { grid-template-columns: 1fr; } .hstat { text-align: left; } }
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --panel: #1C1C1E;
+    --text: #F5F5F7;
+    --muted: #98989D;
+    --border: #38383A;
+    --ok: #30D158;
+    --warn: #FFD60A;
+    --bad: #FF453A;
+    --accent: #0A84FF;
+    --info: #64D2FF;
+  }
+}
+
+/* ---- Tech details ---- */
+.tech-details {
+  max-width: 1280px;
+  margin: 1.1rem auto 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  font-size: .8rem;
+  color: var(--muted);
+  box-shadow: var(--shadow);
+}
+.tech-title {
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text);
+  margin: 0 0 .6rem;
+}
+.tech-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .3rem 1.6rem; margin: 0; }
+.tech-grid div {
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  border-bottom: 1px solid var(--border);
+  padding: .24rem 0;
+}
+.tech-grid dt { color: var(--muted); }
+.tech-grid dd { margin: 0; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.tech-math { margin-top: .7rem; }
+.tech-math summary { cursor: pointer; color: var(--accent); font-size: .8rem; margin-top: 0; }
+.tech-note { font-size: .74rem; color: var(--muted); margin: .35rem 0 .3rem; max-width: 42rem; }
+.tech-table {
+  width: auto;
+  min-width: 24rem;
+  max-width: 34rem;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: .2rem;
+  font-size: .78rem;
+}
+.tech-table th, .tech-table td { text-align: left; padding: .3rem .5rem; border-bottom: 1px solid var(--border); }
+.tech-table th:first-child, .tech-table td:first-child { width: 40%; }
+.tech-table th.num, .tech-table td.num { text-align: right; width: 30%; font-variant-numeric: tabular-nums; }
+.tech-table tfoot td { font-weight: 650; border-top: 1px solid var(--border); border-bottom: 0; }
+.tech-line { max-width: 1280px; margin: .8rem auto 0; color: var(--muted); font-size: .74rem; text-align: center; }
+
+@media (max-width: 700px) {
+  .tech-grid { grid-template-columns: 1fr; }
+  .tech-table { min-width: 0; width: 100%; }
+}
+
+/* ---- Strip links ---- */
+.strip-link {
+  color: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: .15em;
+}
+.strip-link:hover { color: var(--accent); }
+
+/* ---- Colour themes (same page, three palettes) ---- */
+.theme-classic { color-scheme: light dark; }
+
+.theme-warm {
+  color-scheme: light;
+  --bg: #F6F1E7;
+  --panel: #FFFCF5;
+  --text: #241F1A;
+  --muted: #6B6257;
+  --border: #E2D6C3;
+  --ok: #2E6B3A;
+  --warn: #A15C00;
+  --bad: #A8321F;
+  --accent: #9A4F00;
+  --info: #2B6A73;
+}
+
+.theme-dark {
+  color-scheme: dark;
+  --bg: #000000;
+  --panel: #1C1C1E;
+  --text: #F5F5F7;
+  --muted: #98989D;
+  --border: #38383A;
+  --ok: #30D158;
+  --warn: #FFD60A;
+  --bad: #FF453A;
+  --accent: #0A84FF;
+  --info: #64D2FF;
+}
+
+.mini-rows .k.mono{white-space:normal;overflow-wrap:anywhere;min-width:0}
+
+.mini-rows .v{flex:0 0 auto;max-width:60%}
+
+</style>
+</head>
+<body>
+<header class="page-header">
+  <div class="brand-row">
+    <div class="brand-mark" aria-hidden="true">L</div>
+    <div>
+      <p class="eyebrow">Deterministic security signals</p>
+      <h1><em>LOTSE</em></h1>
+    </div>
+  </div>
+  <p class="hero">Vulnerability, exploit, infrastructure, cloud and threat-level signals in one reproducible page. Fixed rules, no AI, no trackers.</p>
+  <p class="page-meta">
+    <span>Data as of <strong>2026-10-31</strong></span>
+    <span>Last run <strong>2026-10-31</strong></span>
+    <span>Started <strong>2026-10-18</strong></span>
+    <span>Runs <strong>14</strong></span>
+    <span>v0.3.0</span>
+  </p>
+</header>
+<nav class="on-this-page" aria-label="On this page">
+  <span class="otp-label">On this page</span>
+  <a href="#overview">Overview</a>
+  <a href="#feeds">Feeds</a>
+  <a href="#signals">Signals</a>
+  <a href="#reference">Tech details</a>
+</nav>
+<nav class="legend" aria-label="How to read this page">
+  <span class="lg-title">How to read</span>
+  <span class="lg-item"><i class="dot act" aria-hidden="true"></i>Act — recent KEV addition at EPSS ≥ 0.5</span>
+  <span class="lg-item"><i class="dot watch" aria-hidden="true"></i>Watch — recent addition, EPSS below 0.5</span>
+  <span class="lg-item"><i class="dot unscored" aria-hidden="true"></i>Unscored — not present in the EPSS snapshot</span>
+  <span class="lg-sep" aria-hidden="true"></span>
+  <span class="lg-item"><i class="dot ok" aria-hidden="true"></i>Feed ok</span>
+  <span class="lg-item"><i class="dot bad" aria-hidden="true"></i>Feed failed</span>
+  <span class="lg-sep" aria-hidden="true"></span>
+  <span class="lg-item">Teal = infrastructure condition (space weather)</span>
+</nav>
+<main class="dashboard" id="dashboard"></main>
+<noscript><p class="privacy">JavaScript is required to render the dashboard cards.</p></noscript>
+<footer>
+  <div class="footer-brand">
+    <span class="brand"><em>LOTSE</em></span>
+    <span>Local evaluation · Aggregated signals · No analytics trackers</span>
+  </div>
+</footer>
+<script type="application/json" id="lotse-data">{"cards": [{"as_of": "2026-10-30", "column": 1, "display": "card", "every": "1d", "join": {"CVE-2026-109618": {"percentile": 0.99998, "score": 0.99999}, "CVE-2026-109619": {"percentile": 0.99999, "score": 0.99999}, "CVE-2026-111357": {"percentile": 0.24569, "score": 0.00316}, "CVE-2026-111497": {"percentile": 0.99666, "score": 0.82641}, "CVE-2026-41709": {"percentile": 0.52718, "score": 0.00689}, "CVE-2026-46300": {"percentile": 0.96923, "score": 0.1613}, "CVE-2026-48356": {"percentile": 0.98767, "score": 0.44579}, "CVE-2026-76418": {"percentile": 0.59949, "score": 0.0091}, "CVE-2026-97229": {"percentile": 0.98015, "score": 0.26569}}, "metrics": {"added_1d": 2, "added_30d": 36, "added_7d": 10, "added_90d": 110, "items": [{"added": "2026-10-30", "cve": "CVE-2026-118527", "product": "Ivanti Connect Secure", "ransomware": false}, {"added": "2026-10-30", "cve": "CVE-2026-111357", "product": "Ivanti Connect Secure", "ransomware": false}, {"added": "2026-10-29", "cve": "CVE-2026-97229", "product": "GitLab Community Edition and Enterprise Edition", "ransomware": false}, {"added": "2026-10-29", "cve": "CVE-2026-76418", "product": "Cisco Secure Firewall ASA Software and Cisco Secure FTD Software", "ransomware": false}, {"added": "2026-10-28", "cve": "CVE-2026-46300", "product": "Linux Kernel", "ransomware": false}, {"added": "2026-10-28", "cve": "CVE-2026-41709", "product": "Broadcom VMware ESX", "ransomware": false}, {"added": "2026-10-27", "cve": "CVE-2026-48356", "product": "Adobe Commerce and Magento", "ransomware": false}, {"added": "2026-10-27", "cve": "CVE-2026-111497", "product": "Google Brotli", "ransomware": false}, {"added": "2026-10-26", "cve": "CVE-2026-109619", "product": "PHP Group PHP", "ransomware": false}, {"added": "2026-10-26", "cve": "CVE-2026-109618", "product": "PHP Group PHP", "ransomware": false}], "known_ransomware": 361, "last_addition": "2026-10-30", "ransomware_30d": 0, "top_vendors": [{"count": 4, "name": "Plex"}, {"count": 3, "name": "Ivanti"}, {"count": 2, "name": "Ahsay"}], "total": 1766}, "module": "cisa_kev", "order": 1, "planned_source": "CISA KEV JSON feed", "rules_evaluated": ["KEV-T01", "KEV-T02", "KEV-T03", "KEV-T04", "KEV-T05", "KEV-T06", "KEV-S01"], "series": [1748, 1754, 1754, 1756, 1758, 1760, 1762, 1764, 1766], "source_url": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json", "status": "ok-new", "title": "CISA KEV"}, {"as_of": "2026-10-22", "column": 1, "display": "card", "every": "1d", "metrics": {"added_1d": 1, "added_30d": 21, "added_7d": 11, "added_90d": 73, "items": [{"added": "2026-10-22", "cve": "CVE-2026-109618", "id": "52704", "platform": "php", "title": "PHP2Shell (CVE-2026-109618) - PHP core versions after v5.4 -", "type": "remote", "verified": true}, {"added": "2026-10-21", "cve": "", "id": "52703", "platform": "multiple", "title": "pizzafy-1.0 - SQLi", "type": "webapps", "verified": false}, {"added": "2026-10-21", "cve": "", "id": "52701", "platform": "windows", "title": "South River Technologies Titan MFT Server 26.0.0 - code exec", "type": "remote", "verified": false}], "total": 47181, "verified": 33979, "verified_30d": 1, "with_cve": 27451}, "module": "exploitdb", "order": 2, "planned_source": "Exploit-DB repository CSV", "rules_evaluated": ["EDB-T01", "EDB-T02", "EDB-T03", "EDB-T04", "EDB-T05", "EDB-S01"], "series": [47170, 47180, 47181], "source_url": "https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv", "status": "stale", "title": "Exploit-DB"}, {"as_of": "2026-10-30", "column": 2, "display": "card", "every": "1d", "metrics": {"critical_ge_0_9": 828, "high_ge_0_7": 2495, "items": [{"cve": "CVE-2014-0160", "percentile": 0.99996, "score": 0.99999}, {"cve": "CVE-2014-3566", "percentile": 1.0, "score": 0.99999}, {"cve": "CVE-2014-6271", "percentile": 0.99993, "score": 0.99999}, {"cve": "CVE-2015-1635", "percentile": 0.99997, "score": 0.99999}, {"cve": "CVE-2017-5638", "percentile": 0.99994, "score": 0.99999}, {"cve": "CVE-2017-9841", "percentile": 0.99994, "score": 0.99999}, {"cve": "CVE-2018-13379", "percentile": 0.99994, "score": 0.99999}, {"cve": "CVE-2019-0708", "percentile": 0.99999, "score": 0.99999}, {"cve": "CVE-2019-11510", "percentile": 0.99995, "score": 0.99999}, {"cve": "CVE-2019-19781", "percentile": 0.99998, "score": 0.99999}, {"cve": "CVE-2020-5902", "percentile": 1.0, "score": 0.99999}, {"cve": "CVE-2021-1498", "percentile": 0.99991, "score": 0.99999}, {"cve": "CVE-2021-21985", "percentile": 0.99992, "score": 0.99999}, {"cve": "CVE-2021-22005", "percentile": 0.99997, "score": 0.99999}, {"cve": "CVE-2021-26084", "percentile": 0.99993, "score": 0.99999}, {"cve": "CVE-2021-26086", "percentile": 0.99993, "score": 0.99999}, {"cve": "CVE-2021-34473", "percentile": 0.99996, "score": 0.99999}, {"cve": "CVE-2021-35464", "percentile": 0.99995, "score": 0.99999}, {"cve": "CVE-2021-40438", "percentile": 0.99997, "score": 0.99999}, {"cve": "CVE-2021-44228", "percentile": 1.0, "score": 0.99999}, {"cve": "CVE-2021-45105", "percentile": 0.9999, "score": 0.99999}, {"cve": "CVE-2022-26134", "percentile": 0.99993, "score": 0.99999}, {"cve": "CVE-2022-29464", "percentile": 0.99992, "score": 0.99999}, {"cve": "CVE-2023-0669", "percentile": 0.99996, "score": 0.99999}, {"cve": "CVE-2023-1389", "percentile": 0.99992, "score": 0.99999}], "mean_score": 0.02633, "median_score": 0.00626, "model_version": "v2026.06.15", "recent_items": [{"cve": "CVE-2025-53770", "percentile": 0.99991, "score": 0.99999}, {"cve": "CVE-2026-109618", "percentile": 0.99998, "score": 0.99999}, {"cve": "CVE-2026-109619", "percentile": 0.99999, "score": 0.99999}], "scored": 398142}, "module": "epss", "order": 1, "planned_source": "FIRST EPSS daily scores", "rules_evaluated": ["EPSS-T01", "EPSS-T02", "EPSS-T03", "EPSS-T04", "EPSS-S01"], "series": [2458, 2459, 2457, 2458, 2458, 2458, 2459, 2489, 2488, 2488, 2491, 2495, 2495], "source_url": "https://epss.cyentia.com/epss_scores-current.csv.gz", "status": "ok-new", "title": "EPSS"}, {"as_of": "2026-10-31", "column": 2, "display": "strip", "every": "1d", "metrics": {"failed": 0, "items": [{"label": "ok", "level": "ok", "note": "6"}, {"label": "failed", "level": "ok", "note": "0"}], "modules": [{"as_of": "2026-10-30", "enabled": true, "every": "1d", "module": "cisa_kev", "status": "ok-new", "title": "CISA KEV"}, {"as_of": "2026-10-30", "enabled": true, "every": "1d", "module": "epss", "status": "ok-new", "title": "EPSS"}, {"as_of": "2026-10-22", "enabled": true, "every": "1d", "module": "exploitdb", "status": "stale", "title": "Exploit-DB"}, {"as_of": "2026-10-31", "enabled": true, "every": "1d", "module": "urlhaus", "status": "ok-new", "title": "URLhaus"}, {"as_of": "2026-10-20", "enabled": true, "every": "1d", "module": "osv", "status": "stale", "title": "OSV.dev"}, {"as_of": "2026-10-30", "enabled": true, "every": "1d", "module": "swpc", "status": "ok-new", "title": "Space weather"}, {"as_of": "2026-10-31", "enabled": true, "every": "1h", "module": "cloud_status", "status": "ok-new", "title": "Cloud"}, {"as_of": "2026-10-31", "enabled": true, "every": "1h", "module": "threat_level", "status": "ok-unchanged", "title": "Threat level"}, {"as_of": "2026-10-27", "enabled": true, "every": "1d", "module": "cisa_ics", "status": "stale", "title": "CISA ICS"}], "ok": 6, "stale": 3, "unchanged": 1}, "module": "build_health", "order": 2, "planned_source": "Local result files", "rules_evaluated": ["HEALTH-S01"], "series": [3, 1, 6, 7, 7, 6, 5, 5, 6, 6, 7, 6, 6], "source_url": "", "status": "ok-new", "title": "Feed health"}, {"as_of": "2026-10-31", "column": 2, "display": "card", "every": "1d", "metrics": {"added_24h": 1000, "distinct_hosts": 225, "items": [{"status": "online", "tag": "Mozi", "url": "hxxp://219.156.42.167:50771/bin.sh"}, {"status": "online", "tag": "", "url": "hxxp://163.142.92.15:36474/bin.sh"}, {"status": "online", "tag": "", "url": "hxxp://113.238.110.69:48434/bin.sh"}], "live_count": 850, "top_families": [{"count": 302, "name": "SmartLoader"}, {"count": 247, "name": "SalatStealer"}, {"count": 156, "name": "zapret"}], "top_tags": [{"count": 653, "tag": "github"}, {"count": 302, "tag": "SmartLoader"}, {"count": 302, "tag": "zip"}]}, "module": "urlhaus", "order": 3, "planned_source": "abuse.ch URLhaus API", "rules_evaluated": ["URLH-T01", "URLH-T02", "URLH-T03", "URLH-T04", "URLH-S01"], "series": [656, 663, 1000, 792, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], "source_url": "https://urlhaus-api.abuse.ch/v1/urls/recent/", "status": "ok-new", "title": "URLhaus"}, {"as_of": "2026-10-31", "column": 2, "display": "strip", "every": "1h", "metrics": {"active_total": 1, "items": [{"label": "AWS", "level": "bad", "note": "2 open events · UAE, Bahrain", "url": "https://health.aws.amazon.com/health/status"}, {"label": "Azure", "level": "ok", "note": "operational", "url": "https://azure.status.microsoft/en-us/status/"}, {"label": "GCP", "level": "ok", "note": "operational", "url": "https://status.cloud.google.com/"}], "providers": [{"active": 2, "level": "bad", "name": "AWS", "note": "UAE, Bahrain", "resolved_24h": 0, "state": "active", "url": "https://health.aws.amazon.com/health/status"}, {"active": 0, "level": "ok", "name": "Azure", "note": "", "resolved_24h": 0, "state": "ok", "url": "https://azure.status.microsoft/en-us/status/"}, {"active": 0, "level": "ok", "name": "GCP", "note": "", "resolved_24h": 0, "state": "ok", "url": "https://status.cloud.google.com/"}]}, "module": "cloud_status", "order": 4, "planned_source": "AWS Health · Azure Status · Google Cloud Status", "rules_evaluated": ["CLD-T01", "CLD-T02", "CLD-S01"], "series": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], "source_url": "", "status": "ok-new", "title": "Cloud"}, {"as_of": "2026-10-31", "column": 2, "display": "strip", "every": "1h", "metrics": {"items": [{"label": "SANS ISC", "level": "ok", "note": "Infocon green", "url": "https://isc.sans.edu/"}], "level_value": 1, "status": "green"}, "module": "threat_level", "order": 5, "planned_source": "SANS Internet Storm Center Infocon", "rules_evaluated": ["INF-T01", "INF-S01"], "series": [1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1], "source_url": "https://isc.sans.edu/api/infocon?json", "status": "ok-unchanged", "title": "Threat level"}, {"as_of": "2026-10-20", "column": 3, "display": "card", "every": "1d", "metrics": {"affected_total": 30, "ecosystems": "PyPI", "items": [{"id": "PYSEC-2026-4320", "package": "certifi", "severity": "UNRATED", "summary": "certifi bundles emSign root CAs with compromised intermediate CA keys"}, {"id": "GHSA-6q48-6c7w-9gw2", "package": "certifi", "severity": "CRITICAL", "summary": "certifi bundles emSign root CAs with compromised intermediate CA keys"}, {"id": "PYSEC-2026-1471", "package": "jinja2", "severity": "UNRATED", "summary": "Jinja2 vulnerable to sandbox breakout through attr filter selecting fo"}], "new_7d": 2, "new_today": 2, "note": "Tracks certifi, httpx, jinja2, jsonschema on PyPI. Source date = newest advisory; quiet feeds read as 0.", "packages_hit": 3, "severity_counts": {"CRITICAL": 2, "HIGH": 4, "LOW": 1, "MODERATE": 8, "UNRATED": 7}}, "module": "osv", "order": 1, "planned_source": "Google OSV.dev API", "rules_evaluated": ["OSV-T01", "OSV-T02", "OSV-T03", "OSV-T04", "OSV-S01"], "series": [5, 2], "source_url": "https://api.osv.dev/v1/query", "status": "stale", "title": "OSV.dev"}, {"as_of": "2026-10-30", "column": 3, "display": "card", "every": "1d", "metrics": {"bz_nt": -3.6, "kp_max": 4.33, "note": "Below G1 threshold (Kp 5) in the observed window", "samples": 9, "storm_level": "None", "wind_kms": 334, "xray_class": "B1.8"}, "module": "swpc", "order": 2, "planned_source": "NOAA SWPC products", "rules_evaluated": ["SWX-T01", "SWX-T02", "SWX-T03", "SWX-S01"], "series": [2.67, 4.67, 4.67, 4.33, 2.0, 2.0, 2.0, 2.67, 2.33, 2.33, 4.33], "source_url": "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json", "status": "ok-new", "title": "Space weather"}, {"as_of": "2026-10-27", "column": 3, "display": "strip", "every": "1d", "metrics": {"items": [{"label": "8 new", "level": "watch", "note": "55 in 30d · 3,994 total"}, {"label": "newest", "level": "ok", "note": "EPICS Base", "url": "https://www.cisa.gov/news-events/cybersecurity-advisories"}], "new_30d": 55, "new_7d": 8, "total": 3994}, "module": "cisa_ics", "order": 3, "planned_source": "CISA OT/ICS advisories (CSAF)", "rules_evaluated": ["ICS-T01", "ICS-T02", "ICS-T03", "ICS-S01"], "series": [9, 8, 5], "source_url": "https://raw.githubusercontent.com/cisagov/CSAF/develop/csaf_files/OT/white/cisa-csaf-ot-feed-tlp-white.json", "status": "stale", "title": "CISA ICS"}], "contact": "", "legal_url": "", "meta": {"data_as_of": "2026-10-31", "last_run": "2026-10-31", "runs": 14, "started": "2026-10-18", "version": "0.3.0"}, "noindex": true, "tech": {"active_rules": 42, "cache": {"bytes": 863, "entries": 5}, "context": "Local-first · raw immutable · failures keep previous data", "envelopes": {"active": 10, "disabled": 0, "total": 10}, "feed_status": {"disabled": 0, "failed": 0, "operational": 10, "stale": 3}, "named_total": 53, "projection": {"daily_bytes": 25358756, "days": 90, "total_bytes": 2282288040}, "raw": {"bytes": 327643937, "files": 128}, "records": [{"module": "cisa_kev", "named": 10, "records": 1766}, {"module": "epss", "named": 28, "records": 398142}, {"module": "exploitdb", "named": 3, "records": 47181}, {"module": "urlhaus", "named": 3, "records": 1000}, {"module": "osv", "named": 3, "records": 30}, {"module": "swpc", "named": 0, "records": 8264}, {"module": "cisa_ics", "named": 2, "records": 3994}, {"module": "cloud_status", "named": 3, "records": 3}, {"module": "threat_level", "named": 1, "records": 1}], "records_total": 460381, "run": {"last_run": "2026-10-31", "runs": 14, "started": "2026-10-18"}, "sources": {"external_feeds": 9, "hosts": 11, "local": 1}, "version": "0.3.0"}, "theme": "classic"}</script>
+<script>
+/* LOTSE v3 — inline renderer. Deterministic: no clock, no network, no
+   randomness. Reads the inlined JSON payload only.
+
+   Views:
+     daily      — hero, cards, signal strip, compact Tech Details
+     ops        — status bar, hero, module table, strip, expanded pipeline math
+     executive  — summary sentence, four tiles, feed chips, one-line tech
+
+   Per-module presentation lives in moduleViews (headline/extras/spark/kpi);
+   adding a feed is one registry entry, not edits across the renderer.
+*/
+(function () {
+  "use strict";
+
+  var host = document.getElementById("dashboard");
+  var dataNode = document.getElementById("lotse-data");
+  var payload = null;
+  try {
+    payload = JSON.parse(dataNode.textContent);
+  } catch (error) {
+    payload = null;
+  }
+  if (!host) { return; }
+  if (!payload) {
+    host.textContent = "Dashboard data unavailable.";
+    return;
+  }
+
+  var theme = payload.theme || "classic";
+  document.body.classList.add("theme-" + theme);
+
+  function node(tag, className, text) {
+    var element = document.createElement(tag);
+    if (className) { element.className = className; }
+    if (text !== undefined) { element.textContent = String(text); }
+    return element;
+  }
+
+  var statusLabels = {
+    "ok-new": "new",
+    "ok-unchanged": "unchanged",
+    "stale": "stale",
+    "failed": "failed",
+    "disabled": "disabled"
+  };
+
+  var captions = {
+    "stale": "Source did not advance.",
+    "failed": "Evaluation failed."
+  };
+
+  var metricLabels = {
+    total: "Total",
+    known_ransomware: "Known ransomware",
+    last_addition: "Last addition",
+    added_1d: "Added (1 day)",
+    added_7d: "Added (7 days)",
+    added_30d: "Added (30 days)",
+    added_90d: "Added (90 days)",
+    scored: "Scored CVEs",
+    high_ge_0_7: "EPSS ≥ 0.7",
+    critical_ge_0_9: "EPSS ≥ 0.9",
+    median_score: "Median score",
+    mean_score: "Mean score",
+    model_version: "Model version",
+    verified: "Verified",
+    with_cve: "With CVE mapping",
+    added_24h: "Added (24h)",
+    live_count: "Live (24h)",
+    affected_total: "Tracked advisories",
+    packages_hit: "Packages affected",
+    new_7d: "New advisories (7d)",
+    new_today: "New today",
+    new_30d: "New (30d)",
+    ecosystems: "Ecosystems",
+    severity_counts: "Severity mix",
+    distinct_hosts: "Distinct hosts (24h)",
+    top_families: "Top families (24h)",
+    top_vendors: "Top vendors (30d)",
+    ransomware_30d: "Ransomware-linked (30d)",
+    verified_30d: "Verified (30d)",
+    samples: "Samples (24h)",
+    kp_max: "Kp index (max 24h)",
+    wind_kms: "Solar wind",
+    bz_nt: "Bz (IMF)",
+    xray_class: "X-ray class",
+    proton: "Proton events",
+    ok: "Ok",
+    unchanged: "Unchanged",
+    stale: "Stale",
+    failed: "Failed",
+    disabled: "Disabled"
+  };
+
+  var hiddenKeys = {
+    items: true, recent_items: true, top_tags: true, top_families: true,
+    top_vendors: true, severity_counts: true, providers: true, note: true,
+    storm_level: true, modules: true
+  };
+
+  var moduleLabels = {
+    cisa_kev: "KEV", epss: "EPSS", exploitdb: "EDB", urlhaus: "URLhaus",
+    osv: "OSV", swpc: "SWPC", cisa_ics: "ICS", cloud_status: "Cloud",
+    threat_level: "SANS", build_health: "Health"
+  };
+
+  function label(key) {
+    return metricLabels[key] || key.replace(/_/g, " ");
+  }
+
+  function formatNumber(value) {
+    var parts = String(value).split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+
+
+
+  function formatBytes(value) {
+    var number = Number(value) || 0;
+    if (number >= 1e9) { return (number / 1e9).toFixed(2) + " GB"; }
+    if (number >= 1e6) { return (number / 1e6).toFixed(1) + " MB"; }
+    if (number >= 1e3) { return (number / 1e3).toFixed(1) + " KB"; }
+    return number + " B";
+  }
+
+  function formatValue(value) {
+    if (Array.isArray(value)) { return value.map(formatValue).join(", "); }
+    if (value && typeof value === "object") { return JSON.stringify(value); }
+    if (typeof value === "number" && isFinite(value)) { return formatNumber(value); }
+    return String(value);
+  }
+
+  function daysBetween(asOf, last) {
+    if (!asOf || !last) { return null; }
+    var end = Date.parse(asOf + "T00:00:00Z");
+    var start = Date.parse(last + "T00:00:00Z");
+    if (isNaN(end) || isNaN(start)) { return null; }
+    return Math.round((end - start) / 86400000);
+  }
+
+  function spark(series, extraClass, ariaText) {
+    var width = 300;
+    var height = 46;
+    var pad = 3;
+    var svgNs = "http://www.w3.org/2000/svg";
+    var values = (series && series.length) ? series.slice() : [0];
+    if (values.length === 1) { values.push(values[0]); }
+    var min = Math.min.apply(null, values);
+    var max = Math.max.apply(null, values);
+    var span = (max - min) || 1;
+    var svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("class", extraClass ? "spark " + extraClass : "spark");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("role", "img");
+    if (ariaText) { svg.setAttribute("aria-label", ariaText); }
+    var points = values.map(function (value, index) {
+      var x = pad + (values.length === 1
+        ? (width - 2 * pad) / 2
+        : index * (width - 2 * pad) / (values.length - 1));
+      var y = height - pad - ((value - min) / span) * (height - 2 * pad);
+      return [x, y];
+    });
+    var line = document.createElementNS(svgNs, "polyline");
+    line.setAttribute("points", points.map(function (point) {
+      return point[0].toFixed(2) + "," + point[1].toFixed(2);
+    }).join(" "));
+    line.setAttribute("vector-effect", "non-scaling-stroke");
+    svg.appendChild(line);
+    var last = document.createElementNS(svgNs, "circle");
+    last.setAttribute("class", "last");
+    last.setAttribute("cx", points[points.length - 1][0].toFixed(2));
+    last.setAttribute("cy", points[points.length - 1][1].toFixed(2));
+    last.setAttribute("r", "3");
+    svg.appendChild(last);
+    return svg;
+  }
+
+  function metricTable(metrics, keys) {
+    var list = node("dl", "metrics");
+    var use = Array.isArray(keys) ? keys : Object.keys(metrics).sort();
+    use.forEach(function (key) {
+      if (hiddenKeys[key] || metrics[key] === undefined) { return; }
+      var row = node("div");
+      row.appendChild(node("dt", null, label(key)));
+      row.appendChild(node("dd", null, formatValue(metrics[key])));
+      list.appendChild(row);
+    });
+    return list;
+  }
+
+  function miniRow(keyText, valueText, monoKey) {
+    var li = node("li");
+    li.appendChild(node("span", monoKey ? "k mono" : "k", keyText));
+    li.appendChild(node("span", "v", valueText));
+    return li;
+  }
+
+  function miniList(caption, rows) {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(node("p", "metric-caption", caption));
+    var list = node("ul", "mini-rows");
+    rows.forEach(function (row) { list.appendChild(row); });
+    frag.appendChild(list);
+    return frag;
+  }
+
+  function auditLine(cardData) {
+    var rules = cardData.rules_evaluated || [];
+    var rulesText = "—";
+    if (rules.length === 1) {
+      rulesText = rules[0];
+    } else if (rules.length > 1) {
+      var prefix = String(rules[0]).split("-")[0];
+      var sameFamily = rules.every(function (rule) {
+        return String(rule).indexOf(prefix + "-") === 0;
+      });
+      rulesText = sameFamily ? prefix + " · " + rules.length + " rules"
+        : rules.slice(0, 3).join(", ");
+    }
+    var hostText = "—";
+    if (cardData.source_url) {
+      var anchor = document.createElement("a");
+      anchor.href = cardData.source_url;
+      hostText = anchor.hostname || cardData.source_url;
+    } else if (cardData.planned_source) {
+      hostText = cardData.planned_source;
+    }
+    var view = moduleViews[cardData.module];
+    var extra = (view && view.auditExtra)
+      ? view.auditExtra(cardData, cardData.metrics || {}) : "";
+    return node("p", "audit",
+      rulesText + " · " + (cardData.every || "1d") + " · " + hostText +
+      (extra ? " · " + extra : ""));
+  }
+
+  /* ---- per-module presentation registry ---- */
+  var moduleViews = {
+    cisa_kev: {
+      headline: function (data, m) {
+        if (m.added_7d === undefined) { return null; }
+        return [formatNumber(m.added_7d), "Additions in 7 days (source date)"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        var rows;
+        if (Array.isArray(m.top_vendors) && m.top_vendors.length) {
+          rows = m.top_vendors.slice(0, 3).map(function (vendor) {
+            return miniRow(vendor.name || "—", formatNumber(vendor.count || 0), false);
+          });
+          frag.appendChild(miniList("Top vendors (30d)", rows));
+        } else if (Array.isArray(m.items) && m.items.length) {
+          var first = m.items[0];
+          frag.appendChild(miniList("Last addition", [miniRow(
+            first.cve || "—",
+            (first.product || "—") + (first.ransomware ? " · ransomware" : ""),
+            true
+          )]));
+        }
+        return frag;
+      },
+      metrics: ["added_1d", "added_30d"],
+      spark: "CISA KEV catalog total",
+    },
+    epss: {
+      headline: function (data, m) {
+        if (m.critical_ge_0_9 === undefined) { return null; }
+        return [formatNumber(m.critical_ge_0_9), "Critical CVEs at EPSS ≥ 0.9"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        var recent = Array.isArray(m.recent_items) && m.recent_items.length;
+        var rows = recent ? m.recent_items : m.items;
+        if (!Array.isArray(rows) || !rows.length) { return frag; }
+        var list = rows.slice(0, 3).map(function (item) {
+          var percentile = "";
+          if (item.percentile !== undefined && item.percentile !== null) {
+            percentile = " · " + (Number(item.percentile) * 100).toFixed(1) + "th pct";
+          }
+          return miniRow(item.cve || "—",
+            Number(item.score).toFixed(2) + percentile, true);
+        });
+        frag.appendChild(miniList(
+          recent ? "Highest EPSS among recent CVEs (≥ 0.9)"
+            : "Highest EPSS today (≥ 0.9)", list));
+        return frag;
+      },
+      metrics: ["high_ge_0_7", "scored"],
+      auditExtra: function (data, m) {
+        return m.model_version ? "model " + m.model_version : "";
+      },
+      spark: "CVEs with EPSS at or above 0.7",
+    },
+    exploitdb: {
+      headline: function (data, m) {
+        if (m.total === undefined) { return null; }
+        return [formatNumber(m.total), "Public exploits indexed"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        if (!Array.isArray(m.items) || !m.items.length) { return frag; }
+        var rows = m.items.slice(0, 3).map(function (item) {
+          var meta = [item.type, item.verified ? "verified" : ""]
+            .filter(Boolean).join(" · ");
+          return miniRow(item.id || "—",
+            (item.cve ? item.cve + " · " : "") +
+            (meta ? meta + " · " : "") + (item.title || ""), true);
+        });
+        frag.appendChild(miniList("Newest public exploits", rows));
+        return frag;
+      },
+      metrics: ["added_7d", "added_30d", "verified", "verified_30d", "with_cve"],
+      spark: "Exploit-DB total",
+    },
+    urlhaus: {
+      headline: function (data, m) {
+        if (m.added_24h === undefined) { return null; }
+        return [formatNumber(m.added_24h), "Malicious URLs added (24h)"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        var rows;
+        if (Array.isArray(m.top_families) && m.top_families.length) {
+          rows = m.top_families.slice(0, 3).map(function (family) {
+            return miniRow(family.name || "—", formatNumber(family.count || 0), false);
+          });
+          frag.appendChild(miniList("Top families (24h)", rows));
+        } else if (Array.isArray(m.top_tags) && m.top_tags.length) {
+          rows = m.top_tags.slice(0, 3).map(function (tag) {
+            return miniRow(tag.tag || "—", formatNumber(tag.count || 0), false);
+          });
+          frag.appendChild(miniList("Top tags (24h)", rows));
+        }
+        if (Array.isArray(m.items) && m.items.length) {
+          rows = m.items.slice(0, 3).map(function (item) {
+            return miniRow(item.url || "—",
+              (item.status || "—") + (item.tag ? " · " + item.tag : ""), true);
+          });
+          frag.appendChild(miniList("Recent URLs", rows));
+        }
+        return frag;
+      },
+      metrics: ["live_count", "distinct_hosts"],
+      spark: "URLhaus URLs added per day",
+    },
+    osv: {
+      headline: function (data, m) {
+        if (m.new_7d === undefined) { return null; }
+        return [formatNumber(m.new_7d),
+          "Published in the 7 days before the newest advisory"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        if (m.note) { frag.appendChild(node("p", "note", m.note)); }
+        if (m.severity_counts && typeof m.severity_counts === "object") {
+          var names = Object.keys(m.severity_counts).sort();
+          if (names.length) {
+            var rows = names.map(function (name) {
+              return miniRow(name, formatNumber(m.severity_counts[name]), false);
+            });
+            frag.appendChild(miniList("Severity mix (all advisories)", rows));
+          }
+        }
+        if (Array.isArray(m.items) && m.items.length) {
+          var list = m.items.slice(0, 3).map(function (item) {
+            var detail = item.summary ||
+              (item.severity && item.severity !== "UNRATED" ? item.severity : "");
+            return miniRow(item.id || "—",
+              (item.package || "—") + (detail ? " · " + detail : ""), true);
+          });
+          frag.appendChild(miniList("Newest advisories", list));
+        }
+        return frag;
+      },
+      metrics: ["affected_total", "packages_hit"],
+      auditExtra: function (data, m) {
+        return m.ecosystems || "";
+      },
+      spark: "New OSV advisories per day",
+    },
+    swpc: {
+      headline: function (data, m) {
+        if (m.storm_level === undefined) { return null; }
+        return [m.storm_level === "None" ? "Quiet" : m.storm_level,
+          "Geomagnetic storm level (NOAA scale)", "info"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        if (m.note) { frag.appendChild(node("p", "note", m.note)); }
+        return frag;
+      },
+      metrics: ["kp_max", "wind_kms", "bz_nt", "xray_class"],
+      auditExtra: function (data, m) {
+        return m.samples === undefined ? "" : m.samples + " samples/24h";
+      },
+      spark: "Planetary K index maximum per day",
+    },
+    cisa_ics: {
+      headline: function (data, m) {
+        if (m.new_7d === undefined) { return null; }
+        return [formatNumber(m.new_7d), "New OT/ICS advisories (7d)"];
+      },
+      extras: function (data, m) {
+        var frag = document.createDocumentFragment();
+        if (!Array.isArray(m.items) || !m.items.length) { return frag; }
+        var rows = m.items.slice(0, 3).map(function (item) {
+          var title = String(item.title || "");
+          if (title.length > 70) { title = title.slice(0, 69).replace(/\s+$/, "") + "…"; }
+          return miniRow(item.id || "—", title, true);
+        });
+        frag.appendChild(miniList("Newest ICS advisories", rows));
+        return frag;
+      },
+      metrics: ["new_30d", "total"],
+      spark: "New CISA ICS advisories per day",
+    },
+    cloud_status: {
+    },
+    threat_level: {
+    },
+    build_health: {
+    }
+  };
+
+  function cardHeadline(data) {
+    var view = moduleViews[data.module];
+    if (!view || !view.headline) { return null; }
+    var pair = view.headline(data, data.metrics || {});
+    if (!pair) { return null; }
+    var frag = document.createDocumentFragment();
+    frag.appendChild(node("p", "headline-number" + (pair[2] ? " " + pair[2] : ""),
+      pair[0]));
+    frag.appendChild(node("p", "metric-caption", pair[1]));
+    return frag;
+  }
+
+  function extras(cardData) {
+    var view = moduleViews[cardData.module];
+    if (view && view.extras) {
+      return view.extras(cardData, cardData.metrics || {});
+    }
+    return document.createDocumentFragment();
+  }
+
+  function sparkAria(data) {
+    var view = moduleViews[data.module];
+    return (view && view.spark) || (data.title + " series");
+  }
+
+  function card(data) {
+    var article = node("article", "card status-" + data.status);
+    article.setAttribute("data-module", data.module);
+
+    var header = node("header", "card-header");
+    var heading = node("div");
+    heading.appendChild(node("h2", null, data.title));
+    header.appendChild(heading);
+    header.appendChild(node("span", "status-chip",
+      statusLabels[data.status] || data.status));
+    article.appendChild(header);
+
+    if (data.status !== "disabled") {
+      var asOf = node("p", "as-of", "As of: ");
+      asOf.appendChild(node("strong", null, data.as_of || "—"));
+      article.appendChild(asOf);
+      var lag = daysBetween(payload.meta && payload.meta.data_as_of, data.as_of);
+      if (lag !== null && lag > 7) {
+        article.appendChild(node("p", "note",
+          "Source date is " + lag + " days behind the newest data."));
+      }
+    }
+
+    var headline = cardHeadline(data);
+    if (headline) { article.appendChild(headline); }
+
+    if (data.module === "swpc") {
+      article.appendChild(spark(data.series, "swx", sparkAria(data)));
+    } else if (data.series && data.series.length) {
+      article.appendChild(spark(data.series, null, sparkAria(data)));
+    }
+
+    if (Array.isArray((data.metrics || {}).modules)) {
+      article.appendChild(healthList(data.metrics.modules));
+      var summary = {};
+      Object.keys(data.metrics).forEach(function (key) {
+        if (key !== "modules") { summary[key] = data.metrics[key]; }
+      });
+      if (Object.keys(summary).length) { article.appendChild(metricTable(summary)); }
+    } else if (Object.keys(data.metrics || {}).length) {
+      var view = moduleViews[data.module];
+      article.appendChild(metricTable(data.metrics, view && view.metrics));
+    }
+
+    article.appendChild(extras(data));
+
+    if (captions[data.status]) {
+      var caption = node("p", "note", captions[data.status]);
+      if (data.status === "stale" && payload.meta && payload.meta.data_as_of) {
+        caption.textContent += " Checked " + payload.meta.data_as_of + ".";
+      }
+      article.appendChild(caption);
+    }
+    if (data.error) { article.appendChild(node("p", "error", data.error)); }
+
+    if (data.status !== "disabled") { article.appendChild(auditLine(data)); }
+    return article;
+  }
+
+  function healthList(rows) {
+    var list = node("ul", "health-list");
+    rows.forEach(function (row) {
+      var item = node("li");
+      item.appendChild(node("strong", null, row.title || row.module || ""));
+      item.appendChild(node("span", null, statusLabels[row.status] || row.status || ""));
+      item.appendChild(node("small", null,
+        (row.as_of || "—") + " · " + (row.every || "") +
+        (row.enabled ? "" : " · not active")));
+      list.appendChild(item);
+    });
+    return list;
+  }
+
+  function dotDot(tierClass) {
+    var dot = node("i", "dot " + tierClass);
+    dot.setAttribute("aria-hidden", "true");
+    return dot;
+  }
+
+  /* ---- hero ---- */
+  function heroSection() {
+    var cards = payload.cards || [];
+    var kev = null;
+    var epss = null;
+    cards.forEach(function (cardItem) {
+      if (cardItem.module === "cisa_kev") { kev = cardItem; }
+      if (cardItem.module === "epss") { epss = cardItem; }
+    });
+    if (!kev || kev.status === "disabled" || !kev.metrics) { return null; }
+
+    var scoreMap = {};
+    if (epss && Array.isArray(epss.metrics.items)) {
+      epss.metrics.items.forEach(function (item) {
+        scoreMap[item.cve] = Number(item.score);
+      });
+    }
+    var joinScores = (kev.join && typeof kev.join === "object") ? kev.join : {};
+    function scoreFor(cve) {
+      if (scoreMap[cve] !== undefined) { return scoreMap[cve]; }
+      if (joinScores[cve] && joinScores[cve].score !== undefined) {
+        return Number(joinScores[cve].score);
+      }
+      return undefined;
+    }
+
+    var additions = Array.isArray(kev.metrics.items) ? kev.metrics.items.slice() : [];
+    additions.sort(function (a, b) {
+      var sa = scoreFor(a.cve) !== undefined ? scoreFor(a.cve) : -1;
+      var sb = scoreFor(b.cve) !== undefined ? scoreFor(b.cve) : -1;
+      if (sb !== sa) { return sb - sa; }
+      return String(b.added || "").localeCompare(String(a.added || ""));
+    });
+    var shown = additions.slice(0, 5);
+
+    var actCount = additions.filter(function (item) {
+      var value = scoreFor(item.cve);
+      return value !== undefined && value >= 0.5;
+    }).length;
+
+    var section = node("section", "hero-panel status-" + kev.status);
+    section.id = "overview";
+    section.setAttribute("aria-labelledby", "hero-title");
+
+    var head = node("div", "hero-head");
+    var heroTitle = node("h2", null, "Recent KEV additions");
+    heroTitle.id = "hero-title";
+    head.appendChild(heroTitle);
+    var stats = node("div", "hero-stats");
+    [[kev.metrics.added_1d, "added on latest source date"],
+     [kev.metrics.added_7d, "added in 7 days"],
+     [actCount, "known at EPSS ≥ 0.5"],
+     [kev.metrics.ransomware_30d, "ransomware-linked in 30 days"]
+    ].forEach(function (pair) {
+      var stat = node("div", "hstat");
+      stat.appendChild(node("b", null,
+        pair[0] === undefined || pair[0] === null ? "—" : formatNumber(pair[0])));
+      stat.appendChild(node("span", null, pair[1]));
+      stats.appendChild(stat);
+    });
+    head.appendChild(stats);
+    section.appendChild(head);
+
+    if (shown.length) {
+      var wrap = node("div", "tablewrap");
+      var table = node("table", "sig");
+      var thead = node("thead");
+      var headRow = node("tr");
+      ["Tier", "CVE", "Product", "Added", "EPSS p(exploit)", "Ransomware"]
+        .forEach(function (name) {
+          var th = node("th", null, name);
+          th.setAttribute("scope", "col");
+          headRow.appendChild(th);
+        });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+      var tbody = node("tbody");
+      shown.forEach(function (item) {
+        var score = scoreFor(item.cve);
+        var tierClass = score === undefined ? "unscored"
+          : (score >= 0.5 ? "act" : "watch");
+        var tr = node("tr");
+        var tier = node("td", "tier");
+        tier.appendChild(dotDot(tierClass));
+        tier.appendChild(document.createTextNode(
+          tierClass === "act" ? " Act"
+            : (tierClass === "watch" ? " Watch" : " Unscored")));
+        tr.appendChild(tier);
+        tr.appendChild(node("td", "cve", item.cve || "—"));
+        tr.appendChild(node("td", "prod", item.product || "—"));
+        tr.appendChild(node("td", "added-cell", item.added || "—"));
+        var epssCell = node("td");
+        if (score !== undefined) {
+          var cell = node("div", "epss-cell");
+          var bar = node("div", "bar");
+          var fill = node("span", tierClass);
+          fill.style.width = String(Math.round(score * 100)) + "%";
+          bar.appendChild(fill);
+          cell.appendChild(bar);
+          cell.appendChild(node("span", "epss-num", score.toFixed(2)));
+          epssCell.appendChild(cell);
+        } else {
+          epssCell.appendChild(document.createTextNode("—"));
+        }
+        tr.appendChild(epssCell);
+        var ransom = node("td");
+        if (item.ransomware) {
+          ransom.appendChild(node("span", "chip ransom", "known ransomware"));
+        } else {
+          ransom.appendChild(document.createTextNode("—"));
+        }
+        tr.appendChild(ransom);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      section.appendChild(wrap);
+    }
+
+    var scope = shown.length === additions.length
+      ? "All " + additions.length + " recent additions"
+      : "Top " + shown.length + " of " + additions.length + " recent additions";
+    section.appendChild(node("p", "note",
+      (additions.length ? scope + ", " : "") +
+      "sorted by exploit probability where available. " +
+      "Unscored = not present in the EPSS snapshot. " +
+      "Deterministic join: KEV date_added × same-day EPSS snapshot."));
+    section.appendChild(auditLine(kev));
+    return section;
+  }
+
+  /* ---- compact signal strip ---- */
+  var stripRank = {
+    cloud_status: 0, threat_level: 1, cisa_ics: 2, build_health: 3
+  };
+
+  function sortStrips(cards) {
+    return cards.slice().sort(function (a, b) {
+      var ra = stripRank[a.module] === undefined ? 99 : stripRank[a.module];
+      var rb = stripRank[b.module] === undefined ? 99 : stripRank[b.module];
+      return ra - rb;
+    });
+  }
+
+  function signalStrip(cards) {
+    var section = node("section", "signal-strip");
+    section.id = "signals";
+    section.setAttribute("aria-label", "Current cloud, threat and feed-health signals");
+    cards.forEach(function (cardData) {
+      var row = node("div", "strip-row status-" + cardData.status);
+      row.appendChild(node("span", "strip-title", cardData.title));
+      var items = (cardData.metrics || {}).items;
+      if (!Array.isArray(items) || !items.length) {
+        row.appendChild(node("span", "strip-empty",
+          cardData.status === "failed" ? "unavailable" : "no data"));
+      } else {
+        items.forEach(function (item) {
+          var chip = node("span", "strip-item");
+          var dot = node("i", "dot " + (item.level || "unknown"));
+          dot.setAttribute("aria-hidden", "true");
+          chip.appendChild(dot);
+          if (item.url) {
+            var link = node("a", "strip-label strip-link", item.label || "—");
+            link.href = item.url;
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+            link.title = "Open source status";
+            chip.appendChild(link);
+          } else {
+            chip.appendChild(node("span", "strip-label", item.label || "—"));
+          }
+          if (item.note) { chip.appendChild(node("span", "strip-note", item.note)); }
+          row.appendChild(chip);
+        });
+      }
+      section.appendChild(row);
+    });
+    return section;
+  }
+
+  /* ---- Tech Details ---- */
+  function recordsTable(records) {
+    var list = records || [];
+    var table = node("table", "tech-table");
+    var thead = node("thead");
+    var head = node("tr");
+    ["Feed", "Records read", "Named rows"].forEach(function (name, index) {
+      var th = node("th", index === 0 ? null : "num", name);
+      th.setAttribute("scope", "col");
+      head.appendChild(th);
+    });
+    thead.appendChild(head);
+    table.appendChild(thead);
+    var tbody = node("tbody");
+    var totalRecords = 0;
+    var totalNamed = 0;
+    list.forEach(function (row) {
+      totalRecords += row.records || 0;
+      totalNamed += row.named || 0;
+      var tr = node("tr");
+      tr.appendChild(node("td", null, moduleLabels[row.module] || row.module));
+      tr.appendChild(node("td", "num",
+        row.records === null || row.records === undefined
+          ? "—" : formatNumber(row.records)));
+      tr.appendChild(node("td", "num",
+        row.named ? formatNumber(row.named) : "—"));
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    var tfoot = node("tfoot");
+    var total = node("tr", "total");
+    total.appendChild(node("td", null, "Total"));
+    total.appendChild(node("td", "num", formatNumber(totalRecords)));
+    total.appendChild(node("td", "num", formatNumber(totalNamed)));
+    tfoot.appendChild(total);
+    table.appendChild(tfoot);
+    return table;
+  }
+
+  function techDetails(tech) {
+    var frag = document.createDocumentFragment();
+    if (!tech || !tech.sources) { return frag; }
+    var sources = tech.sources || {};
+    var status = tech.feed_status || {};
+    var run = tech.run || {};
+    var cache = tech.cache || {};
+    var raw = tech.raw || {};
+    var proj = tech.projection || {};
+    var envelopes = tech.envelopes || {};
+
+    var section = node("section", "tech-details");
+    section.id = "reference";
+    section.setAttribute("aria-label", "Technical details");
+    section.appendChild(node("h2", "tech-title", "Tech details"));
+
+    var rows = [
+      ["Sources parsed",
+        formatNumber(sources.external_feeds || 0) + " external feeds · " +
+        formatNumber(sources.hosts || 0) + " hosts" +
+        (sources.local ? " + local aggregator" : "")],
+      ["Feed status",
+        formatNumber(status.operational || 0) + " operational · " +
+        formatNumber(status.failed || 0) + " failed" +
+        (status.disabled ? " · " + formatNumber(status.disabled) + " disabled" : "") +
+        (status.stale ? " · " + formatNumber(status.stale) + " stale" : "") +
+        " (incl. aggregator)"],
+      ["Active rules",
+        formatNumber(tech.active_rules || 0) + " across " +
+        formatNumber(envelopes.active || 0) + " modules"],
+      ["Bounded output",
+        formatNumber(tech.records_total || 0) + " records read → " +
+        formatNumber(tech.named_total || 0) + " named rows"],
+      ["Pipeline", "fetch → evaluate → render · 3 deterministic layers"],
+      ["Engine", "Deterministic rules · no AI · no network at render"],
+      ["Envelopes",
+        formatNumber(envelopes.total || 0) +
+        (envelopes.disabled
+          ? " (" + formatNumber(envelopes.active || 0) + " active · " +
+            formatNumber(envelopes.disabled) + " disabled)"
+          : "")],
+      ["Run state",
+        "started " + (run.started || "—") +
+        " · last run " + (run.last_run || "—") +
+        " · " + formatNumber(run.runs || 0) + " runs"],
+      ["HTTP cache",
+        cache.bytes === undefined ? "—" :
+          formatBytes(cache.bytes) + " · " +
+          formatNumber(cache.entries || 0) + " validators"],
+      ["Raw storage",
+        formatNumber(raw.files || 0) + " files · " +
+        formatBytes(raw.bytes || 0) + " · " +
+        formatNumber(proj.days || 0) + "-day rotation"],
+      ["Projection",
+        formatBytes(proj.daily_bytes || 0) + "/day · " +
+        formatBytes(proj.total_bytes || 0) + " at " +
+        formatNumber(proj.days || 0) + " days"],
+      ["Version", tech.version || "—"],
+      ["Context", tech.context || ""]
+    ];
+
+    var list = node("dl", "tech-grid");
+    rows.forEach(function (pair) {
+      if (!pair[1]) { return; }
+      var row = node("div");
+      row.appendChild(node("dt", null, pair[0]));
+      row.appendChild(node("dd", null, pair[1]));
+      list.appendChild(row);
+    });
+    section.appendChild(list);
+
+    if (Array.isArray(tech.records) && tech.records.length) {
+      var details = node("details", "tech-math");
+      details.appendChild(node("summary", null, "Pipeline math"));
+      details.appendChild(node("p", "tech-note",
+        "Records read = source rows parsed; named rows = bounded items kept in the envelope."));
+      details.appendChild(recordsTable(tech.records));
+      section.appendChild(details);
+    }
+    frag.appendChild(section);
+    return frag;
+  }
+
+  /* ---- daily view ---- */
+  function renderDaily() {
+    host.textContent = "";
+    var hero = heroSection();
+    if (hero) { host.appendChild(hero); }
+
+    var grid = node("main", "grid");
+    grid.id = "feeds";
+    var visible = 0;
+    var strips = [];
+    (payload.cards || []).forEach(function (cardData) {
+      if (cardData.status === "disabled") { return; }
+      if (cardData.display === "strip") { strips.push(cardData); return; }
+      grid.appendChild(card(cardData));
+      visible += 1;
+    });
+    host.appendChild(node("h2", "section-label", "Feeds"));
+    host.appendChild(grid);
+    if (!visible && !strips.length) {
+      host.appendChild(node("p", "privacy", "No active modules configured."));
+    }
+    if (strips.length) {
+      host.appendChild(node("h2", "section-label", "Signals"));
+      host.appendChild(signalStrip(sortStrips(strips)));
+    }
+    host.appendChild(techDetails(payload.tech));
+    auditStrip();
+  }
+
+  /* ---- footer audit strip ---- */
+  function auditStrip() {
+    var footer = document.querySelector("footer");
+    if (!footer) { return; }
+    var cards = (payload.cards || []).filter(function (item) {
+      return item.status !== "disabled";
+    });
+    var hosts = [];
+    cards.forEach(function (item) {
+      if (item.source_url) {
+        var anchor = document.createElement("a");
+        anchor.href = item.source_url;
+        if (anchor.hostname && hosts.indexOf(anchor.hostname) === -1) {
+          hosts.push(anchor.hostname);
+        }
+      } else if (item.planned_source && hosts.indexOf(item.planned_source) === -1) {
+        hosts.push(item.planned_source);
+      }
+    });
+    var rules = 0;
+    cards.forEach(function (item) {
+      rules += (item.rules_evaluated || []).length;
+    });
+    var line = node("p", "audit-strip");
+    line.appendChild(node("b", null, "Audit"));
+    line.appendChild(document.createTextNode(
+      " — " + rules + " rules across " + cards.length + " enabled modules · sources: " +
+      (hosts.join(", ") || "—") +
+      " · deterministic render: raw/ + rules → bytes, no clock reads"));
+    footer.insertBefore(line, footer.firstChild);
+  }
+
+  renderDaily();
+})();
+</script>
+</body>
+</html>
